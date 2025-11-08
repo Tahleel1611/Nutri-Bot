@@ -3,6 +3,9 @@
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node.js](https://img.shields.io/badge/Node.js-v14+-green.svg)](https://nodejs.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](https://github.com/Tahleel1611/Nutri-Bot)
+
+> **Recent Updates**: NutriBot has been completely overhauled with professional backend infrastructure, comprehensive documentation, and security enhancements. See [IMPROVEMENTS.md](IMPROVEMENTS.md) for details.
 
 ## Overview
 
@@ -17,14 +20,20 @@ NutriBot is a comprehensive nutrition and wellness application that helps users 
 - 🤖 **AI Recommendations** - Get AI-powered meal suggestions based on your profile
 - 📈 **Nutrition Insights** - Visualize nutritional data and progress
 - 👤 **User Profiles** - Manage personal information and dietary preferences
+- 🔒 **Secure Authentication** - JWT-based authentication with rate limiting
 
 ### Technical Features
-- RESTful API architecture
-- JWT-based authentication
-- MySQL database with Sequelize ORM
-- Flask-based AI recommendation engine
-- Responsive React UI with TailwindCSS
-- Comprehensive error handling and validation
+- ✅ RESTful API architecture
+- ✅ JWT-based authentication with refresh tokens
+- ✅ MySQL database with Sequelize ORM
+- ✅ Flask-based AI recommendation engine
+- ✅ Responsive React UI with TailwindCSS
+- ✅ Comprehensive error handling and validation
+- ✅ Rate limiting for security
+- ✅ Health check endpoints for monitoring
+- ✅ Structured logging
+- ✅ Environment validation
+- ✅ Production-ready deployment configurations
 
 ## Tech Stack
 
@@ -48,7 +57,32 @@ NutriBot is a comprehensive nutrition and wellness application that helps users 
 - **Pandas** - Data manipulation
 - **scikit-learn** - Machine learning capabilities
 
-## Installation
+## Quick Start
+
+### Automated Setup (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/Tahleel1611/Nutri-Bot.git
+cd Nutri-Bot
+
+# Run the setup script
+./setup.sh
+
+# Edit .env file with your configuration
+nano .env
+
+# Create database
+mysql -u root -p -e "CREATE DATABASE nutribot"
+
+# Start services
+npm start                # Node.js API (Terminal 1)
+python3 app.py          # Python AI Service (Terminal 2)
+```
+
+### Manual Setup
+
+See detailed instructions below.
 
 ### Prerequisites
 - Node.js 14+ 
@@ -284,10 +318,33 @@ Nutri-Bot/
 ## Security Considerations
 
 1. **Environment Variables**: Never commit `.env` files. Always use environment variables for sensitive data.
-2. **JWT Secret**: Change the default JWT secret in production.
-3. **Password Security**: Passwords are hashed using bcryptjs with salt rounds.
+2. **JWT Secret**: Change the default JWT secret in production (min 32 characters).
+3. **Password Security**: Passwords are hashed using bcryptjs with 8 salt rounds.
 4. **Input Validation**: All user inputs are validated before processing.
-5. **CORS**: Configure CORS properly for production deployments.
+5. **Rate Limiting**: Authentication endpoints are rate-limited (5 req/15 min).
+6. **CORS**: Configure CORS properly for production deployments.
+7. **Error Messages**: Stack traces are hidden in production.
+
+## Testing
+
+### Smoke Tests
+
+Run basic functionality tests:
+
+```bash
+# Make sure services are running first
+./test-smoke.sh
+```
+
+### Manual Testing
+
+```bash
+# Test Node.js API health
+curl http://localhost:5000/health
+
+# Test Python AI service health
+curl http://localhost:5001/health
+```
 
 ## Development
 
