@@ -364,8 +364,7 @@ def generate_diet_plan():
     except Exception as e:
         logger.error(f"Error generating diet plan: {e}")
         return jsonify({
-            'error': 'Internal server error while generating diet plan',
-            'message': str(e)
+            'error': 'Internal server error while generating diet plan'
         }), 500
 
 # Error handlers
