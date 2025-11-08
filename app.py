@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import json
 import random
+import logging
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -11,9 +12,24 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Sample food database (in a real app, this would be more extensive or use an external API)
-with open('data/food_database.json', 'r') as f:
-    FOOD_DATABASE = json.load(f)
+FOOD_DATABASE = []
+try:
+    if os.path.exists('data/food_database.json'):
+        with open('data/food_database.json', 'r') as f:
+            FOOD_DATABASE = json.load(f)
+        logger.info(f"Loaded {len(FOOD_DATABASE)} food items from database")
+    else:
+        logger.warning("Food database not found. Will be created on startup.")
+except Exception as e:
+    logger.error(f"Error loading food database: {e}")
 
 @app.route('/')
 def home():
@@ -27,7 +43,18 @@ def recommend_meals():
     """
     Generate meal recommendations based on user profile and goals
     """
-    data = request.json
+    try:
+        data = request.json
+        
+        if not data:
+            return jsonify({
+                'error': 'Request body is required'
+            }), 400
+    except Exception as e:
+        logger.error(f"Error parsing request: {e}")
+        return jsonify({
+            'error': 'Invalid JSON in request body'
+        }), 400
     
     # Extract user information
     user_profile = data.get('profile', {})
@@ -35,12 +62,25 @@ def recommend_meals():
     dietary_restrictions = user_profile.get('dietaryRestrictions', [])
     allergies = user_profile.get('allergies', [])
     
+    
     # Calculate daily calorie needs (simplified)
-    weight = user_profile.get('weight', 70)  # kg
-    height = user_profile.get('height', 170)  # cm
-    age = user_profile.get('age', 30)
-    gender = user_profile.get('gender', 'male')
-    activity_level = user_profile.get('activityLevel', 'moderate')
+    try:
+        weight = float(user_profile.get('weight', 70))  # kg
+        height = float(user_profile.get('height', 170))  # cm
+        age = int(user_profile.get('age', 30))
+        gender = user_profile.get('gender', 'male')
+        activity_level = user_profile.get('activityLevel', 'moderate')
+        
+        # Validate ranges
+        if weight <= 0 or height <= 0 or age <= 0:
+            return jsonify({
+                'error': 'Invalid profile values. Weight, height, and age must be positive numbers.'
+            }), 400
+    except (ValueError, TypeError) as e:
+        logger.error(f"Invalid profile data: {e}")
+        return jsonify({
+            'error': 'Invalid data types in user profile'
+        }), 400
     
     # Basic BMR calculation using Harris-Benedict equation
     if gender == 'male':
@@ -89,6 +129,13 @@ def recommend_meals():
     # Filter foods based on dietary restrictions and allergies
     filtered_foods = FOOD_DATABASE.copy()
     
+    # Check if database is empty
+    if not filtered_foods:
+        logger.warning("Food database is empty")
+        return jsonify({
+            'error': 'Food database is not available. Please contact administrator.'
+        }), 503
+    
     for restriction in dietary_restrictions:
         filtered_foods = [food for food in filtered_foods if restriction.lower() not in food.get('restrictions', [])]
     
@@ -101,11 +148,18 @@ def recommend_meals():
     dinner_options = [food for food in filtered_foods if 'dinner' in food.get('meal_type', [])]
     snack_options = [food for food in filtered_foods if 'snack' in food.get('meal_type', [])]
     
+    # Check if we have enough options
+    if not breakfast_options or not lunch_options or not dinner_options:
+        logger.warning("Insufficient meal options in database")
+        return jsonify({
+            'error': 'Insufficient meal options available'
+        }), 503
+    
     # Select random meals (in a real app, this would use more sophisticated algorithms)
     breakfast = random.sample(breakfast_options, min(3, len(breakfast_options)))
     lunch = random.sample(lunch_options, min(3, len(lunch_options)))
     dinner = random.sample(dinner_options, min(3, len(dinner_options)))
-    snacks = random.sample(snack_options, min(4, len(snack_options)))
+    snacks = random.sample(snack_options, min(4, len(snack_options))) if snack_options else []
     
     # Prepare response
     meal_plan = {
@@ -134,105 +188,214 @@ def generate_diet_plan():
     """
     Generate a complete diet plan for a specified duration
     """
-    data = request.json
-    
-    # Extract user information
-    user_profile = data.get('profile', {})
-    goal = user_profile.get('goal', 'maintenance')
-    duration_days = data.get('duration', 7)  # Default to 7-day plan
-    
-    # Get meal recommendations first
-    meal_response = recommend_meals()
-    meal_data = json.loads(meal_response.get_data(as_text=True))
-    
-    # Create a diet plan
-    diet_plan = {
-        'name': f"{goal.replace('_', ' ').title()} Plan",
-        'description': f"A {duration_days}-day personalized diet plan for {goal.replace('_', ' ')}",
-        'goal': goal,
-        'dailyCalories': meal_data['meal_plan']['daily_calories'],
-        'dailyProtein': meal_data['meal_plan']['daily_protein'],
-        'dailyCarbs': meal_data['meal_plan']['daily_carbs'],
-        'dailyFat': meal_data['meal_plan']['daily_fat'],
-        'days': []
-    }
-    
-    # Generate meals for each day
-    for day in range(1, duration_days + 1):
-        # For variety, we'd normally generate different meals for each day
-        # But for simplicity, we'll use the same recommendations with slight variations
+    try:
+        data = request.json
         
-        breakfast = random.choice(meal_data['meal_plan']['meals']['breakfast'])
-        lunch = random.choice(meal_data['meal_plan']['meals']['lunch'])
-        dinner = random.choice(meal_data['meal_plan']['meals']['dinner'])
-        snack1 = random.choice(meal_data['meal_plan']['meals']['snacks'])
-        snack2 = random.choice(meal_data['meal_plan']['meals']['snacks'])
+        if not data:
+            return jsonify({
+                'error': 'Request body is required'
+            }), 400
         
-        # Add slight variations to calories for realism
-        variation = random.uniform(0.95, 1.05)
+        # Extract user information
+        user_profile = data.get('profile', {})
         
-        day_plan = {
-            'day': day,
-            'meals': [
-                {
-                    'type': 'breakfast',
-                    'name': breakfast['name'],
-                    'calories': round(breakfast['calories'] * variation),
-                    'protein': round(breakfast['protein'] * variation, 1),
-                    'carbs': round(breakfast['carbs'] * variation, 1),
-                    'fat': round(breakfast['fat'] * variation, 1),
-                    'ingredients': breakfast['ingredients'],
-                    'instructions': breakfast.get('instructions', 'No specific instructions.')
-                },
-                {
-                    'type': 'lunch',
-                    'name': lunch['name'],
-                    'calories': round(lunch['calories'] * variation),
-                    'protein': round(lunch['protein'] * variation, 1),
-                    'carbs': round(lunch['carbs'] * variation, 1),
-                    'fat': round(lunch['fat'] * variation, 1),
-                    'ingredients': lunch['ingredients'],
-                    'instructions': lunch.get('instructions', 'No specific instructions.')
-                },
-                {
-                    'type': 'dinner',
-                    'name': dinner['name'],
-                    'calories': round(dinner['calories'] * variation),
-                    'protein': round(dinner['protein'] * variation, 1),
-                    'carbs': round(dinner['carbs'] * variation, 1),
-                    'fat': round(dinner['fat'] * variation, 1),
-                    'ingredients': dinner['ingredients'],
-                    'instructions': dinner.get('instructions', 'No specific instructions.')
-                },
-                {
-                    'type': 'snack',
-                    'name': snack1['name'],
-                    'calories': round(snack1['calories'] * variation),
-                    'protein': round(snack1['protein'] * variation, 1),
-                    'carbs': round(snack1['carbs'] * variation, 1),
-                    'fat': round(snack1['fat'] * variation, 1),
-                    'ingredients': snack1['ingredients'],
-                    'instructions': snack1.get('instructions', 'No specific instructions.')
-                },
-                {
-                    'type': 'snack',
-                    'name': snack2['name'],
-                    'calories': round(snack2['calories'] * variation),
-                    'protein': round(snack2['protein'] * variation, 1),
-                    'carbs': round(snack2['carbs'] * variation, 1),
-                    'fat': round(snack2['fat'] * variation, 1),
-                    'ingredients': snack2['ingredients'],
-                    'instructions': snack2.get('instructions', 'No specific instructions.')
-                }
-            ]
+        if not user_profile:
+            return jsonify({
+                'error': 'User profile is required'
+            }), 400
+        
+        duration_days = data.get('duration', 7)  # Default to 7-day plan
+        
+        try:
+            duration_days = int(duration_days)
+            if duration_days < 1 or duration_days > 30:
+                return jsonify({
+                    'error': 'Duration must be between 1 and 30 days'
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                'error': 'Duration must be a valid number'
+            }), 400
+    
+        
+        goal = user_profile.get('goal', 'maintenance')
+        
+        # Get meal recommendations first by calling the recommend_meals function
+        # Create a temporary request context
+        from flask import Request
+        temp_request = {
+            'profile': user_profile
         }
         
-        diet_plan['days'].append(day_plan)
+        # Call recommend_meals internally
+        with app.test_request_context(
+            '/api/recommend/meals',
+            method='POST',
+            json=temp_request
+        ):
+            meal_response = recommend_meals()
+            
+            # Check if recommend_meals returned an error
+            if isinstance(meal_response, tuple) and meal_response[1] >= 400:
+                return meal_response
+            
+            meal_data = meal_response.get_json()
+            
+            if not meal_data or 'meal_plan' not in meal_data:
+                return jsonify({
+                    'error': 'Failed to generate meal recommendations'
+                }), 500
     
+        
+        diet_plan = {
+            'name': f"{goal.replace('_', ' ').title()} Plan",
+            'description': f"A {duration_days}-day personalized diet plan for {goal.replace('_', ' ')}",
+            'goal': goal,
+            'dailyCalories': meal_data['meal_plan']['daily_calories'],
+            'dailyProtein': meal_data['meal_plan']['daily_protein'],
+            'dailyCarbs': meal_data['meal_plan']['daily_carbs'],
+            'dailyFat': meal_data['meal_plan']['daily_fat'],
+            'days': []
+        }
+        
+        # Check if we have meals
+        meals = meal_data['meal_plan']['meals']
+        if not meals.get('breakfast') or not meals.get('lunch') or not meals.get('dinner'):
+            return jsonify({
+                'error': 'Insufficient meal data to generate diet plan'
+            }), 500
+    
+        
+        # Generate meals for each day
+        for day in range(1, duration_days + 1):
+            # For variety, we'd normally generate different meals for each day
+            # But for simplicity, we'll use the same recommendations with slight variations
+            
+            breakfast = random.choice(meals['breakfast'])
+            lunch = random.choice(meals['lunch'])
+            dinner = random.choice(meals['dinner'])
+            
+            snacks_list = meals.get('snacks', [])
+            if len(snacks_list) >= 2:
+                snack1 = random.choice(snacks_list)
+                snack2 = random.choice(snacks_list)
+            elif len(snacks_list) == 1:
+                snack1 = snacks_list[0]
+                snack2 = snacks_list[0]
+            else:
+                # Create default snack if none available
+                snack1 = snack2 = {
+                    'name': 'Fruit',
+                    'calories': 100,
+                    'protein': 1,
+                    'carbs': 25,
+                    'fat': 0,
+                    'ingredients': ['fruit'],
+                    'instructions': 'Eat fresh fruit'
+                }
+        
+            
+            # Add slight variations to calories for realism
+            variation = random.uniform(0.95, 1.05)
+            
+            day_plan = {
+                'day': day,
+                'meals': [
+                    {
+                        'type': 'breakfast',
+                        'name': breakfast['name'],
+                        'calories': round(breakfast['calories'] * variation),
+                        'protein': round(breakfast['protein'] * variation, 1),
+                        'carbs': round(breakfast['carbs'] * variation, 1),
+                        'fat': round(breakfast['fat'] * variation, 1),
+                        'ingredients': breakfast.get('ingredients', []),
+                        'instructions': breakfast.get('instructions', 'No specific instructions.')
+                    },
+                    {
+                        'type': 'lunch',
+                        'name': lunch['name'],
+                        'calories': round(lunch['calories'] * variation),
+                        'protein': round(lunch['protein'] * variation, 1),
+                        'carbs': round(lunch['carbs'] * variation, 1),
+                        'fat': round(lunch['fat'] * variation, 1),
+                        'ingredients': lunch.get('ingredients', []),
+                        'instructions': lunch.get('instructions', 'No specific instructions.')
+                    },
+                    {
+                        'type': 'dinner',
+                        'name': dinner['name'],
+                        'calories': round(dinner['calories'] * variation),
+                        'protein': round(dinner['protein'] * variation, 1),
+                        'carbs': round(dinner['carbs'] * variation, 1),
+                        'fat': round(dinner['fat'] * variation, 1),
+                        'ingredients': dinner.get('ingredients', []),
+                        'instructions': dinner.get('instructions', 'No specific instructions.')
+                    },
+                    {
+                        'type': 'snack',
+                        'name': snack1['name'],
+                        'calories': round(snack1['calories'] * variation),
+                        'protein': round(snack1['protein'] * variation, 1),
+                        'carbs': round(snack1['carbs'] * variation, 1),
+                        'fat': round(snack1['fat'] * variation, 1),
+                        'ingredients': snack1.get('ingredients', []),
+                        'instructions': snack1.get('instructions', 'No specific instructions.')
+                    },
+                    {
+                        'type': 'snack',
+                        'name': snack2['name'],
+                        'calories': round(snack2['calories'] * variation),
+                        'protein': round(snack2['protein'] * variation, 1),
+                        'carbs': round(snack2['carbs'] * variation, 1),
+                        'fat': round(snack2['fat'] * variation, 1),
+                        'ingredients': snack2.get('ingredients', []),
+                        'instructions': snack2.get('instructions', 'No specific instructions.')
+                    }
+                ]
+            }
+            
+            diet_plan['days'].append(day_plan)
+        
+        return jsonify({
+            'diet_plan': diet_plan,
+            'message': f"Successfully generated a {duration_days}-day diet plan for {goal.replace('_', ' ')}."
+        })
+    
+    except Exception as e:
+        logger.error(f"Error generating diet plan: {e}")
+        return jsonify({
+            'error': 'Internal server error while generating diet plan',
+            'message': str(e)
+        }), 500
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
     return jsonify({
-        'diet_plan': diet_plan,
-        'message': f"Successfully generated a {duration_days}-day diet plan for {goal.replace('_', ' ')}."
-    })
+        'error': 'Endpoint not found'
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Internal server error: {error}")
+    return jsonify({
+        'error': 'Internal server error'
+    }), 500
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({
+        'error': 'Method not allowed'
+    }), 405
+
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'service': 'NutriBot AI Service',
+        'version': '1.0.0'
+    }), 200
 
 if __name__ == '__main__':
     # Create data directory if it doesn't exist
