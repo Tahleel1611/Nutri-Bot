@@ -5,6 +5,14 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: Sequelize.UUIDV4,
       primaryKey: true
     },
+    userId: {
+      type: Sequelize.UUID,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
     dietPlanId: {
       type: Sequelize.UUID,
       allowNull: true,
@@ -21,8 +29,8 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.TEXT
     },
     type: {
-      type: Sequelize.ENUM('breakfast', 'lunch', 'dinner', 'snack'),
-      allowNull: false
+      type: Sequelize.ENUM('breakfast', 'lunch', 'dinner', 'snack', 'other'),
+      defaultValue: 'other'
     },
     calories: {
       type: Sequelize.FLOAT

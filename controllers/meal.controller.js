@@ -124,7 +124,7 @@ exports.createMeal = async (req, res) => {
       carbs,
       fat,
       fiber,
-      mealType,
+      type,
       ingredients,
       instructions
     } = req.body;
@@ -145,7 +145,7 @@ exports.createMeal = async (req, res) => {
       carbs: parseFloat(carbs) || 0,
       fat: parseFloat(fat) || 0,
       fiber: parseFloat(fiber) || 0,
-      mealType: mealType || 'other',
+      type: type || 'other',
       ingredients: ingredients || [],
       instructions: instructions || ''
     });
@@ -176,7 +176,7 @@ exports.updateMeal = async (req, res) => {
       carbs,
       fat,
       fiber,
-      mealType,
+      type,
       ingredients,
       instructions
     } = req.body;
@@ -202,7 +202,7 @@ exports.updateMeal = async (req, res) => {
       carbs: carbs !== undefined ? parseFloat(carbs) : meal.carbs,
       fat: fat !== undefined ? parseFloat(fat) : meal.fat,
       fiber: fiber !== undefined ? parseFloat(fiber) : meal.fiber,
-      mealType: mealType !== undefined ? mealType : meal.mealType,
+      type: type !== undefined ? type : meal.type,
       ingredients: ingredients !== undefined ? ingredients : meal.ingredients,
       instructions: instructions !== undefined ? instructions : meal.instructions
     });

@@ -1,6 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { validateEnv } = require('./config/env.validator');
+
+// Validate environment variables
+validateEnv();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

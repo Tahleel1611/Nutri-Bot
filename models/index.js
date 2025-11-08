@@ -58,6 +58,15 @@ db.nutrientLog.belongsTo(db.user, {
   as: "user"
 });
 
+db.user.hasMany(db.meal, {
+  foreignKey: "userId",
+  as: "meals"
+});
+db.meal.belongsTo(db.user, {
+  foreignKey: "userId",
+  as: "user"
+});
+
 db.dietPlan.hasMany(db.meal, {
   foreignKey: "dietPlanId",
   as: "meals"
