@@ -45,6 +45,11 @@ module.exports = (sequelize, Sequelize) => {
     endDate: {
       type: Sequelize.DATEONLY
     },
+    duration: {
+      type: Sequelize.INTEGER,
+      comment: 'Duration in days',
+      defaultValue: 7
+    },
     isActive: {
       type: Sequelize.BOOLEAN,
       defaultValue: true

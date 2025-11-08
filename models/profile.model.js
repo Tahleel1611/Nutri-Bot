@@ -23,7 +23,8 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER
     },
     gender: {
-      type: Sequelize.ENUM('male', 'female', 'other')
+      type: Sequelize.ENUM('male', 'female', 'other', 'not_specified'),
+      defaultValue: 'not_specified'
     },
     height: {
       type: Sequelize.FLOAT,
