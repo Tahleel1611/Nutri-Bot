@@ -1,26 +1,38 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export function NutritionSummary() {
-  const { dailySummary } = useUser();
+  const { dailySummary, loadingSummary } = useUser();
   const { macros } = dailySummary;
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  // Calculate percentages for pie chart visualization
-  const total = macros.carbs + macros.protein + macros.fat;
-  const carbsPercent = total > 0 ? Math.round((macros.carbs / total) * 100) : 0;
-  const proteinPercent = total > 0 ? Math.round((macros.protein / total) * 100) : 0;
-  const fatPercent = total > 0 ? Math.round((macros.fat / total) * 100) : 0;
-  
-  // Flash animation when macros change
+
+  const { total, carbsPercent, proteinPercent, fatPercent } = useMemo(() => {
+    const t = (macros.carbs || 0) + (macros.protein || 0) + (macros.fat || 0);
+    return {
+      total: t,
+      carbsPercent: t > 0 ? Math.round(((macros.carbs || 0) / t) * 100) : 0,
+      proteinPercent: t > 0 ? Math.round(((macros.protein || 0) / t) * 100) : 0,
+      fatPercent: t > 0 ? Math.round(((macros.fat || 0) / t) * 100) : 0,
+    };
+  }, [macros.carbs, macros.protein, macros.fat]);
+
   useEffect(() => {
     setIsUpdating(true);
     const timer = setTimeout(() => setIsUpdating(false), 600);
     return () => clearTimeout(timer);
   }, [macros.carbs, macros.protein, macros.fat]);
-  
+
+  if (loadingSummary) {
+    return (
+      <div className="flex items-center justify-center h-[120px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-b-4 border-primary" />
+        <span className="ml-2 text-muted-foreground">Loading macronutrient summary...</span>
+      </div>
+    );
+  }
+
   return (
     <Card className={`nutribot-card transition-all duration-300 ${isUpdating ? 'ring-2 ring-primary' : ''}`}>
       <CardHeader className="pb-2">
@@ -44,7 +56,6 @@ export function NutritionSummary() {
               </div>
             </div>
           </div>
-          
           {/* Legend */}
           <div className="grid grid-cols-3 gap-2 text-center text-sm">
             <div className="space-y-1">

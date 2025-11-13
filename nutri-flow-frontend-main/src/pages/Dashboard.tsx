@@ -11,13 +11,7 @@ import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { fetchDailySummary, loading } = useUser();
-  
-  useEffect(() => {
-    if (user) {
-      fetchDailySummary();
-    }
-  }, [user, fetchDailySummary]);
+  const { fetchDailySummary } = useUser();
   
   // Refresh dashboard when component becomes visible
   useEffect(() => {

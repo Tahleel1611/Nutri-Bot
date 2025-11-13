@@ -58,7 +58,10 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: []
     }
   }, {
-    timestamps: true
+    timestamps: true,
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 
   return Profile;

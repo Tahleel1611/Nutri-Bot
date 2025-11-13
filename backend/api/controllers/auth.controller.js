@@ -6,12 +6,23 @@ const jwt = require("jsonwebtoken");
 
 exports.signup = async (req, res) => {
   try {
+    console.log('📝 Signup request received:', { email: req.body.email, hasPassword: !!req.body.password, name: req.body.name });
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ where: { email: req.body.email } });
+    if (existingUser) {
+      console.log('❌ User already exists:', req.body.email);
+      return res.status(400).send({ message: "Email is already in use!" });
+    }
+
     // Create user
     const user = await User.create({
       username: req.body.email.split('@')[0], // Generate username from email
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8)
     });
+
+    console.log('✅ User created:', { id: user.id, email: user.email });
 
     // Create profile for the user
     await db.profile.create({
@@ -20,12 +31,18 @@ exports.signup = async (req, res) => {
       lastName: req.body.name?.split(' ').slice(1).join(' ') || ''
     });
 
+    console.log('✅ Profile created for user:', user.id);
+
     res.status(200).send({
       message: "User registered successfully!",
       userId: user.id
     });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    console.error('❌ Signup error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).send({ message: "Email or username is already in use!" });
+    }
+    res.status(500).send({ message: error.message || "Error occurred during signup" });
   }
 };
 

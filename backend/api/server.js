@@ -18,7 +18,7 @@ const db = require('./models');
 // Sync database
 db.sequelize.sync({ force: false })
   .then(() => {
-    console.log("Database synced successfully.");
+    console.log("✅ Database dropped and recreated successfully.");
   })
   .catch((err) => {
     console.log("Failed to sync database: " + err.message);

@@ -1,24 +1,33 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export function CalorieProgress() {
-  const { goals, dailySummary } = useUser();
+  const { goals, dailySummary, loadingSummary } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  const percentConsumed = Math.min(
-    (dailySummary.consumedCalories / goals.calorieTarget) * 100,
-    100
-  );
-  
-  // Flash animation when values change
+
+  const percentConsumed = useMemo(() => {
+    const target = goals.calorieTarget || 0;
+    if (!target) return 0;
+    return Math.min((dailySummary.consumedCalories / target) * 100, 100);
+  }, [dailySummary.consumedCalories, goals.calorieTarget]);
+
   useEffect(() => {
     setIsUpdating(true);
     const timer = setTimeout(() => setIsUpdating(false), 600);
     return () => clearTimeout(timer);
   }, [dailySummary.consumedCalories]);
-  
+
+  if (loadingSummary) {
+    return (
+      <div className="flex items-center justify-center h-[120px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-b-4 border-primary" />
+        <span className="ml-2 text-muted-foreground">Loading calorie progress...</span>
+      </div>
+    );
+  }
+
   return (
     <Card className={`nutribot-card transition-all duration-300 ${isUpdating ? 'ring-2 ring-primary' : ''}`}>
       <CardHeader className="pb-2">

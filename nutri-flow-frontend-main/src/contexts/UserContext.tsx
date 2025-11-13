@@ -34,6 +34,7 @@ interface UserContextType {
   profile: UserProfile;
   dailySummary: DailySummary;
   loading: boolean;
+  loadingSummary: boolean;
   updateGoals: (goals: Partial<UserGoals>) => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   fetchDailySummary: () => Promise<void>;
@@ -55,13 +56,13 @@ const defaultProfile: UserProfile = {
 };
 
 const defaultDailySummary: DailySummary = {
-  consumedCalories: 850,
-  remainingCalories: 1150,
-  mealsLogged: 3,
+  consumedCalories: 0,
+  remainingCalories: 0,
+  mealsLogged: 0,
   macros: {
-    carbs: 95,
-    protein: 45,
-    fat: 28,
+    carbs: 0,
+    protein: 0,
+    fat: 0,
   },
 };
 
@@ -73,6 +74,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [dailySummary, setDailySummary] = useState<DailySummary>(defaultDailySummary);
   const [loading, setLoading] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(true);
 
   // Load saved goals and profile on authentication
   useEffect(() => {
@@ -135,10 +137,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!user) {
       // If user is not logged in, use default values
       setDailySummary(defaultDailySummary);
+      setLoadingSummary(false);
       return;
     }
     
-    setLoading(true);
+    setLoadingSummary(true);
     try {
       console.log('🔄 Fetching daily summary...');
       // Get daily summary from API
@@ -165,14 +168,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setDailySummary(summary);
     } catch (error) {
       console.error('❌ Failed to fetch daily summary:', error);
-      // On error, keep current state or use placeholder data
-      console.log('⚠️ Using placeholder data due to API error');
-      setDailySummary({
-        ...defaultDailySummary,
-        remainingCalories: goals.calorieTarget - defaultDailySummary.consumedCalories,
-      });
+      // On error, keep current state to avoid flicker
+      console.log('⚠️ Keeping current daily summary due to API error');
     } finally {
-      setLoading(false);
+      setLoadingSummary(false);
     }
   };
 
@@ -183,6 +182,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         profile,
         dailySummary,
         loading,
+        loadingSummary,
         updateGoals,
         updateProfile,
         fetchDailySummary,

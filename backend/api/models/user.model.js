@@ -24,7 +24,8 @@ module.exports = (sequelize, Sequelize) => {
     },
     isActive: {
       type: Sequelize.BOOLEAN,
-      defaultValue: true
+      defaultValue: true,
+      field: 'isActive' // Explicitly map to camelCase column
     },
     lastLogin: {
       type: Sequelize.DATE
@@ -34,7 +35,10 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: 'user'
     }
   }, {
-    timestamps: true
+    timestamps: true,
+    underscored: true, // Use snake_case in database
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 
   return User;
