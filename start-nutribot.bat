@@ -2,16 +2,32 @@
 echo Starting NutriBot Application...
 
 echo.
+echo Installing Backend API Dependencies...
+cd backend\api
+if not exist node_modules (
+    echo Installing npm packages...
+    npm install
+)
+
+echo.
+echo Installing Frontend Dependencies...
+cd ..\..\nutri-flow-frontend-main
+if not exist node_modules (
+    echo Installing npm packages...
+    npm install
+)
+
+echo.
 echo Starting Backend API Server...
-start cmd /k "cd backend\api && npm run dev"
+start cmd /k "cd /d %~dp0backend\api && npm run dev"
 
 echo.
 echo Starting AI Recommendation Service...
-start cmd /k "cd backend\ai-service && python -m pip install --upgrade pip setuptools wheel && python -m pip install -r requirements.txt && python app.py"
+start cmd /k "cd /d %~dp0backend\ai-service && python -m pip install --upgrade pip setuptools wheel && python -m pip install -r requirements.txt && python app.py"
 
 echo.
 echo Starting Frontend Web Application...
-start cmd /k "cd nutri-flow-frontend-main && npm install && npm run dev"
+start cmd /k "cd /d %~dp0nutri-flow-frontend-main && npm run dev"
 
 echo.
 echo NutriBot application components have been started!
