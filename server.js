@@ -28,12 +28,14 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const mealRoutes = require('./routes/meal.routes');
 const planRoutes = require('./routes/plan.routes');
+const waterIntakeRoutes = require('./routes/waterIntake.routes');
 
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/plans', planRoutes);
+app.use('/api/water-intake', waterIntakeRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -46,6 +48,7 @@ app.get('/', (req, res) => {
       users: '/api/users',
       meals: '/api/meals',
       plans: '/api/plans'
+          waterIntake: '/api/water-intake'
     }
   });
 });
