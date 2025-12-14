@@ -29,6 +29,7 @@ db.profile = require("./profile.model.js")(sequelize, Sequelize);
 db.meal = require("./meal.model.js")(sequelize, Sequelize);
 db.dietPlan = require("./dietPlan.model.js")(sequelize, Sequelize);
 db.nutrientLog = require("./nutrientLog.model.js")(sequelize, Sequelize);
+db.waterIntake = require("./waterIntake.model.js")(sequelize, Sequelize);
 
 // Define relationships
 db.user.hasOne(db.profile, {
@@ -74,6 +75,15 @@ db.dietPlan.hasMany(db.meal, {
 db.meal.belongsTo(db.dietPlan, {
   foreignKey: "dietPlanId",
   as: "dietPlan"
+});
+
+db.user.hasMany(db.waterIntake, {
+  foreignKey: "userId",
+  as: "waterIntakes"
+});
+db.waterIntake.belongsTo(db.user, {
+  foreignKey: "userId",
+  as: "user"
 });
 
 module.exports = db;
