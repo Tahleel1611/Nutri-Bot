@@ -11,7 +11,7 @@
 
 NutriBot is a comprehensive nutrition and wellness application that helps users track their dietary intake, generate personalized meal plans, and achieve their health goals. The application combines a modern React frontend with a robust Node.js backend and Python-based AI recommendation service.
 
-## Features
+## Features and Functionalities
 
 ### Core Functionality
 - 🍽️ **Meal Planning** - Create and manage personalized diet plans
